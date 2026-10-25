@@ -9,7 +9,7 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.get('/', (req, res) => {
-    res.send('NOCTHRAX Cloud Core Online 🟢 [Multi-IA Activa]');
+    res.send('NOCTHRAX Cloud Core Online 🟢 [Groq Production Active]');
 });
 
 app.listen(PORT, () => {
@@ -18,9 +18,9 @@ app.listen(PORT, () => {
 
 const TOKEN = '8814923020:AAFonBO-tZ9ffSHMcm6zamTI4P2Yjl-ifFU';
 
-// Llaves de los núcleos de IA
+// Llave y configuración oficial de Groq
 const GROQ_API_KEY = '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'.trim();
-const GEMINI_API_KEY = ''; // Opcional para respaldo secundario
+const GEMINI_API_KEY = ''; // Opcional de respaldo
 
 const CONTACTO_MASTER = 'https://t.me/R1_Master';
 
@@ -50,12 +50,12 @@ function registrarLog(usuario, mensaje) {
     });
 }
 
-// 1. Núcleo Principal: Groq Cloud (Modelo 100% compatible y ultra rápido)
+// 1. Núcleo Principal: Groq Cloud con el modelo oficial verificado
 async function consultarGroqCloud(promptUsuario, modoActual) {
     try {
         const systemPrompt = PROMPTS[modoActual] || PROMPTS.woman;
         const response = await axios.post('https://api.groq.com/openai/v1/chat/completions', {
-            model: 'llama3-8b-8192', // Modelo correcto y verificado
+            model: 'llama-3.1-8b-instant', // Modelo oficial y verificado en la consola de Groq
             messages: [
                 { role: "system", content: systemPrompt },
                 { role: "user", content: promptUsuario }
@@ -67,12 +67,12 @@ async function consultarGroqCloud(promptUsuario, modoActual) {
                 'Authorization': `Bearer ${GROQ_API_KEY}`,
                 'Content-Type': 'application/json'
             },
-            timeout: 12000
+            timeout: 15000
         });
 
         return response.data.choices[0].message.content;
     } catch (error) {
-        console.warn('⚠️ Groq Cloud presentó intermitencia:', error.response?.data || error.message);
+        console.error('=== ERROR EN GROQ CLOUD ===', error.response?.data || error.message);
         return null;
     }
 }
@@ -156,7 +156,7 @@ bot.on('message', async (msg) => {
         usuariosSaludados.add(chatId);
 
         const mensajeBienvenida = 
-            "🚀 NOCTHRAX IA - SISTEMA CENTRAL ACTIVO [Multi-IA]\n\n" +
+            "🚀 NOCTHRAX IA - SISTEMA CENTRAL ACTIVO\n\n" +
             `¡Hola, ${nombreUsuario}! Qué gusto tenerte por aquí. Soy el núcleo oficial de NOCTHRAX, un sistema avanzado con múltiples personalidades y capacidades tácticas totales.\n\n` +
             "🔥 Únete a nuestro canal oficial:\n" +
             "https://whatsapp.com/channel/0029Vb8U7H18PgsFezIoJu1m\n\n" +
@@ -237,7 +237,7 @@ bot.on('message', async (msg) => {
     }
 
     if (texto.toLowerCase() === '/estado') {
-        bot.sendMessage(chatId, "🟢 [NOCTHRAX] ESTADO DEL NODO CLOUD: Multi-IA Activa (Groq con modelo optimizado).");
+        bot.sendMessage(chatId, "🟢 [NOCTHRAX] ESTADO DEL NODO CLOUD: 100% Operativo con Groq (llama-3.1-8b-instant).");
         return;
     }
 
@@ -273,4 +273,4 @@ bot.on('message', async (msg) => {
     bot.sendMessage(chatId, respuestaIA);
 });
 
-console.log('NOCTHRAX Bot con Sistema Multi-IA en Cascada Activo...');
+console.log('NOCTHRAX Bot con Groq Production activo...');
