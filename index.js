@@ -50,7 +50,7 @@ async function consultarGroqCloud(promptUsuario, modoActual) {
     try {
         const systemPrompt = PROMPTS[modoActual] || PROMPTS.woman;
         const response = await axios.post('https://api.groq.com/openai/v1/chat/completions', {
-            model: 'llama-3.3-70b-versatile',
+            model: 'llama-3.1-8b-instant',
             messages: [
                 { role: "system", content: systemPrompt },
                 { role: "user", content: promptUsuario }
