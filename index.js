@@ -9,7 +9,7 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.get('/', (req, res) => {
-    res.send('NOCTHRAX Cloud Core Online 🟢');
+    res.send('NOCTHRAX Cloud Core Online 🟢 [Multi-IA Activa]');
 });
 
 app.listen(PORT, () => {
@@ -17,7 +17,12 @@ app.listen(PORT, () => {
 });
 
 const TOKEN = '8814923020:AAFonBO-tZ9ffSHMcm6zamTI4P2Yjl-ifFU';
+
+// Llaves de respaldo para el sistema Multi-IA
 const GROQ_API_KEY = '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'.trim();
+// Puedes configurar tu clave de Google AI Studio (Gemini) aquí o dejarla lista
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY || ''; 
+
 const CONTACTO_MASTER = 'https://t.me/R1_Master';
 
 const bot = new TelegramBot(TOKEN, { polling: true });
@@ -46,11 +51,12 @@ function registrarLog(usuario, mensaje) {
     });
 }
 
+// 1. Núcleo Principal: Groq Cloud (Ultra rápido)
 async function consultarGroqCloud(promptUsuario, modoActual) {
     try {
         const systemPrompt = PROMPTS[modoActual] || PROMPTS.woman;
         const response = await axios.post('https://api.groq.com/openai/v1/chat/completions', {
-            model: 'llama3-8b-8192', // Modelo actualizado y 100% compatible
+            model: 'llama3-8b-8192',
             messages: [
                 { role: "system", content: systemPrompt },
                 { role: "user", content: promptUsuario }
@@ -62,14 +68,50 @@ async function consultarGroqCloud(promptUsuario, modoActual) {
                 'Authorization': `Bearer ${GROQ_API_KEY}`,
                 'Content-Type': 'application/json'
             },
-            timeout: 15000
+            timeout: 12000
         });
 
         return response.data.choices[0].message.content;
     } catch (error) {
-        console.error('=== ERROR EN GROQ CLOUD ===', error.response?.data || error.message);
+        console.warn('⚠️ Groq Cloud presentó intermitencia, saltando al respaldo secundario...');
         return null;
     }
+}
+
+// 2. Núcleo Secundario de Respaldo: Google Gemini (Alta estabilidad)
+async function consultarGeminiCloud(promptUsuario, modoActual) {
+    if (!GEMINI_API_KEY) return null; // Si no hay llave de Gemini configurada, omite
+    try {
+        const systemPrompt = PROMPTS[modoActual] || PROMPTS.woman;
+        const promptCompleto = `${systemPrompt}\n\nMensaje del usuario: ${promptUsuario}`;
+        
+        const response = await axios.post(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
+            contents: [{
+                parts: [{ text: promptCompleto }]
+            }]
+        }, {
+            headers: { 'Content-Type': 'application/json' },
+            timeout: 15000
+        });
+
+        return response.data.candidates[0].content.parts[0].text;
+    } catch (error) {
+        console.error('=== ERROR EN GEMINI CLOUD (RESPALDO) ===', error.response?.data || error.message);
+        return null;
+    }
+}
+
+// 3. Sistema en Cascada (Failover Automático)
+async function procesarInteligenciaArtificial(promptUsuario, modoActual) {
+    // Intento principal con Groq
+    let respuesta = await consultarGroqCloud(promptUsuario, modoActual);
+    if (respuesta) return respuesta;
+
+    // Si Groq falla, intenta automáticamente con Gemini (si está configurada)
+    respuesta = await consultarGeminiCloud(promptUsuario, modoActual);
+    if (respuesta) return respuesta;
+
+    return null; // Si ambos núcleos fallan
 }
 
 bot.on('message', async (msg) => {
@@ -118,7 +160,7 @@ bot.on('message', async (msg) => {
         usuariosSaludados.add(chatId);
 
         const mensajeBienvenida = 
-            "🚀 NOCTHRAX IA - SISTEMA CENTRAL ACTIVO\n\n" +
+            "🚀 NOCTHRAX IA - SISTEMA CENTRAL ACTIVO [Multi-IA]\n\n" +
             `¡Hola, ${nombreUsuario}! Qué gusto tenerte por aquí. Soy el núcleo oficial de NOCTHRAX, un sistema avanzado con múltiples personalidades y capacidades tácticas totales.\n\n` +
             "🔥 Únete a nuestro canal oficial:\n" +
             "https://whatsapp.com/channel/0029Vb8U7H18PgsFezIoJu1m\n\n" +
@@ -166,7 +208,7 @@ bot.on('message', async (msg) => {
             "• /dox - Inteligencia OSINT y consultas\n" +
             "• /metodos - Métodos Especiales (Línea, IMEI, WhatsApp y Telegram)\n" +
             "• Creación de Páginas Web Profesionales\n" +
-            "• Bots para Redes Sociales (Instagram, TikTok, Facebook, Twitter/X, YouTube, Telegram, WhatsApp, Spotify, Pinterest) + Automatización de Bots mediante encuestas de Google Forms\n\n" +
+            "• Bots para Redes Sociales + Automatización de Bots mediante encuestas de Google Forms\n\n" +
             "📲 ¿Interesado en adquirir o cotizar alguno de estos servicios? Escribe directamente a nuestro operador R1:\n" +
             "📞 +57 313 5022169\n\n" +
             "🌟 Descubre los más de 90 servicios en nuestro canal:\n" +
@@ -199,7 +241,7 @@ bot.on('message', async (msg) => {
     }
 
     if (texto.toLowerCase() === '/estado') {
-        bot.sendMessage(chatId, "🟢 [NOCTHRAX] ESTADO DEL NODO CLOUD: 100% Operativo, multihilo y sincronizado.");
+        bot.sendMessage(chatId, "🟢 [NOCTHRAX] ESTADO DEL NODO CLOUD: Multi-IA Activa (Groq + Respaldo Cloud).");
         return;
     }
 
@@ -225,7 +267,7 @@ bot.on('message', async (msg) => {
     bot.sendChatAction(chatId, 'typing');
 
     const modoActual = personalidadesUsuarios.get(chatId) || 'woman';
-    const respuestaIA = await consultarGroqCloud(texto, modoActual);
+    const respuestaIA = await procesarInteligenciaArtificial(texto, modoActual);
 
     if (!respuestaIA) {
         bot.sendMessage(chatId, "⚠️ Hubo un pequeño fallo de conexión con la nube. Inténtalo de nuevo en un momento.");
@@ -235,4 +277,4 @@ bot.on('message', async (msg) => {
     bot.sendMessage(chatId, respuestaIA);
 });
 
-console.log('NOCTHRAX Bot con personalidades dinámicas activas...');
+console.log('NOCTHRAX Bot con Sistema Multi-IA en Cascada Activo...');
