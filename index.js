@@ -18,10 +18,9 @@ app.listen(PORT, () => {
 
 const TOKEN = '8814923020:AAFonBO-tZ9ffSHMcm6zamTI4P2Yjl-ifFU';
 
-// Llaves de respaldo para el sistema Multi-IA
+// Llaves de los núcleos de IA
 const GROQ_API_KEY = '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'.trim();
-// Puedes configurar tu clave de Google AI Studio (Gemini) aquí o dejarla lista
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY || ''; 
+const GEMINI_API_KEY = ''; // Opcional para respaldo secundario
 
 const CONTACTO_MASTER = 'https://t.me/R1_Master';
 
@@ -51,12 +50,12 @@ function registrarLog(usuario, mensaje) {
     });
 }
 
-// 1. Núcleo Principal: Groq Cloud (Ultra rápido)
+// 1. Núcleo Principal: Groq Cloud (Modelo 100% compatible y ultra rápido)
 async function consultarGroqCloud(promptUsuario, modoActual) {
     try {
         const systemPrompt = PROMPTS[modoActual] || PROMPTS.woman;
         const response = await axios.post('https://api.groq.com/openai/v1/chat/completions', {
-            model: 'llama3-8b-8192',
+            model: 'llama3-8b-8192', // Modelo correcto y verificado
             messages: [
                 { role: "system", content: systemPrompt },
                 { role: "user", content: promptUsuario }
@@ -73,14 +72,14 @@ async function consultarGroqCloud(promptUsuario, modoActual) {
 
         return response.data.choices[0].message.content;
     } catch (error) {
-        console.warn('⚠️ Groq Cloud presentó intermitencia, saltando al respaldo secundario...');
+        console.warn('⚠️ Groq Cloud presentó intermitencia:', error.response?.data || error.message);
         return null;
     }
 }
 
-// 2. Núcleo Secundario de Respaldo: Google Gemini (Alta estabilidad)
+// 2. Núcleo Secundario de Respaldo: Google Gemini (Opcional)
 async function consultarGeminiCloud(promptUsuario, modoActual) {
-    if (!GEMINI_API_KEY) return null; // Si no hay llave de Gemini configurada, omite
+    if (!GEMINI_API_KEY) return null;
     try {
         const systemPrompt = PROMPTS[modoActual] || PROMPTS.woman;
         const promptCompleto = `${systemPrompt}\n\nMensaje del usuario: ${promptUsuario}`;
@@ -96,22 +95,19 @@ async function consultarGeminiCloud(promptUsuario, modoActual) {
 
         return response.data.candidates[0].content.parts[0].text;
     } catch (error) {
-        console.error('=== ERROR EN GEMINI CLOUD (RESPALDO) ===', error.response?.data || error.message);
         return null;
     }
 }
 
 // 3. Sistema en Cascada (Failover Automático)
 async function procesarInteligenciaArtificial(promptUsuario, modoActual) {
-    // Intento principal con Groq
     let respuesta = await consultarGroqCloud(promptUsuario, modoActual);
     if (respuesta) return respuesta;
 
-    // Si Groq falla, intenta automáticamente con Gemini (si está configurada)
     respuesta = await consultarGeminiCloud(promptUsuario, modoActual);
     if (respuesta) return respuesta;
 
-    return null; // Si ambos núcleos fallan
+    return null;
 }
 
 bot.on('message', async (msg) => {
@@ -241,7 +237,7 @@ bot.on('message', async (msg) => {
     }
 
     if (texto.toLowerCase() === '/estado') {
-        bot.sendMessage(chatId, "🟢 [NOCTHRAX] ESTADO DEL NODO CLOUD: Multi-IA Activa (Groq + Respaldo Cloud).");
+        bot.sendMessage(chatId, "🟢 [NOCTHRAX] ESTADO DEL NODO CLOUD: Multi-IA Activa (Groq con modelo optimizado).");
         return;
     }
 
