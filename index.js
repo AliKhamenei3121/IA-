@@ -17,7 +17,7 @@ app.listen(PORT, () => {
 });
 
 const TOKEN = '8814923020:AAFonBO-tZ9ffSHMcm6zamTI4P2Yjl-ifFU';
-const GROQ_API_KEY = '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'.trim();
+const GROQ_API_KEY = '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'.trim();
 const CONTACTO_MASTER = 'https://t.me/R1_Master';
 
 const bot = new TelegramBot(TOKEN, { polling: true });
